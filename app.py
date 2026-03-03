@@ -2,6 +2,10 @@ import torch
 import gradio as gr
 from diffusers.pipelines.flux2.pipeline_flux2_klein import Flux2KleinPipeline
 import gc
+import tkinter as tk
+from tkinter import filedialog
+from PIL import Image
+import numpy as np
 
 # Initialize model
 device = "cuda"
@@ -75,7 +79,7 @@ def generate_image(
                 width=width,
                 num_inference_steps=num_inference_steps,
                 generator=generator,
-                callback_on_step_end=progress_callback,
+                callback_on_step_end=progress_callback, #type: ignore
                 # УБРАЛИ: callback_on_step_end_tensor_inputs=["latents"],
                 guidance_scale=1.0,
             )
@@ -112,6 +116,38 @@ def edit_image(generated_image):
         return "", None
 
     return "", generated_image
+
+
+def save_image(image):
+    """
+    Save image with dialog for format and location selection
+    """
+    if image is None:
+        return "No image to save"
+    
+    # Convert numpy array to PIL Image if needed
+    if isinstance(image, np.ndarray):
+        if image.dtype == np.float32 or image.dtype == np.float64:
+            # If float, scale to 0-255
+            image = (image * 255).astype(np.uint8)
+        image = Image.fromarray(image)
+    
+    root = tk.Tk()
+    root.withdraw()  # Hide the window
+    
+    file_path = filedialog.asksaveasfilename(
+        defaultextension=".jpg",
+        filetypes=[("JPEG", "*.jpg"), ("PNG", "*.png"), ("All Files", "*.*")]
+    )
+    
+    if file_path:
+        try:
+            image.save(file_path)
+            return f"✅ Image saved to {file_path}"
+        except Exception as e:
+            return f"❌ Error saving image: {str(e)}"
+    else:
+        return "Cancel"
 
 
 def update_height(base_image, width):
@@ -173,8 +209,10 @@ with gr.Blocks(title="Flux2 Klein Generator") as demo:
             generate_btn = gr.Button("🚀 Generate", variant="primary")
 
         with gr.Column():
-            image_output = gr.Image(label="📸 Result")
+            image_output = gr.Image(label="📸 Result", buttons=['download', 'fullscreen'], interactive=False)
             edit_btn = gr.Button("✏️ Edit Image", variant="secondary")
+            save_btn = gr.Button("💾 Save Image", variant="secondary")
+            save_status = gr.Textbox(label="Status", interactive=False, value="")
 
     # Connect generate button
     generate_btn.click(
@@ -208,6 +246,13 @@ with gr.Blocks(title="Flux2 Klein Generator") as demo:
         fn=edit_image,
         inputs=[image_output],
         outputs=[prompt_input, image_input],
+    )
+
+    # Connect save button
+    save_btn.click(
+        fn=save_image,
+        inputs=[image_output],
+        outputs=[save_status],
     )
 
 if __name__ == "__main__":
