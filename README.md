@@ -31,8 +31,6 @@ This tool allows you to:
 ### 1️⃣ Create Virtual Environment
 
 ```powershell
-cd d:\Code\flux2
-
 # Create virtual environment
 python -m venv .venv
 
@@ -46,6 +44,18 @@ python -m venv .venv
 ### 2️⃣ Install Dependencies
 
 Make sure venv is activated (you should see "(.venv)" on the left in your console)
+
+**Check your CUDA version**
+
+Before installing PyTorch, you need to know your installed CUDA version. Run this command in PowerShell:
+
+```powershell
+nvidia-smi
+```
+
+Look for the "CUDA Version" line in the output (e.g., "CUDA Version: 12.1").
+
+If you don't have NVIDIA GPU or `nvidia-smi` is not available, install CUDA Toolkit from https://developer.nvidia.com/cuda-downloads
 
 **Step 1: Install PyTorch with the correct CUDA version**
 
